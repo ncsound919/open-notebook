@@ -1,0 +1,1183 @@
+{
+  "scaffold": {
+    "repo": {
+      "name": "lfnovo/open-notebook",
+      "scaffolding_version": "v2",
+      "description": "Scaffolding for prioritized roadmap, epics, issues, interfaces, and templates to implement multi-model routing, agents, knowledge graph, ingestion, retrieval, collaboration, and deployment features."
+    },
+    "metadata": {
+      "author": "scaffold-generator-v2",
+      "created_at": "2026-02-16T17:27:00-05:00",
+      "assumptions": [
+        "Project uses GitHub for issues/PRs and CI",
+        "Backend services are modular and can load adapters",
+        "Local runtimes (Ollama/LM Studio) are reachable on LAN",
+        "Embeddings and retrievers are pluggable",
+        "Privacy-first defaults: prefer local models when available"
+      ],
+      "code_locations": {
+        "modeladapters": "backend/aiproviders/adapters/",
+        "routing_logic": "backend/services/routing.py",
+        "frontendroutingui": "frontend/app/notebooks/[id]/settings/routing.tsx",
+        "surrealdb_schemas": "backend/db/schemas/",
+        "content_transforms": "backend/services/transformations/"
+      }
+    },
+    "epics": [
+      {
+        "id": "EPIC-001",
+        "title": "Model Adapter Layer and Per-Notebook Routing",
+        "priority": "high",
+        "estimate_weeks": 3,
+        "description": "Extend Esperanto adapters; add per-notebook routing table in SurrealDB; Next.js UI in notebook settings; integrate with existing /api/v1/chat endpoint.",
+        "filestotouch": [
+          "backend/aiproviders/adapters/deepseekr1.py",
+          "backend/services/routing.py",
+          "backend/api/v1/models.py",
+          "frontend/app/notebooks/[id]/settings/routing.tsx"
+        ],
+        "milestone": "MVP-30d",
+        "acceptance_criteria": [
+          "New adapters (DeepSeek-R1, Qwen3, Gemini-2.0) implement IModelAdapter interface",
+          "SurrealDB table notebookroutingrules created via migration",
+          "Notebook settings page shows routing editor (priority list + task rules)",
+          "Chat endpoint respects notebook routing rules and logs decisions"
+        ]
+      },
+      {
+        "id": "EPIC-002",
+        "title": "Task Classifier and Auto-Selector",
+        "priority": "high",
+        "estimate_weeks": 2,
+        "description": "FastAPI service classifying prompts; capability matrix in JSON config; auto-route integration.",
+        "dependencies": ["EPIC-001"],
+        "filestotouch": [
+          "backend/services/task_classifier.py",
+          "backend/config/model_capabilities.json"
+        ],
+        "milestone": "MVP-30d",
+        "acceptance_criteria": [
+          "POST /api/v1/classify-task returns task_type + confidence",
+          "Auto-selector service in routing.py uses classifier output",
+          "Test suite with 100+ labeled prompts achieves >85% accuracy"
+        ]
+      },
+      {
+        "id": "EPIC-003",
+        "title": "Local Stack Discovery and Benchmarker",
+        "priority": "high",
+        "estimate_weeks": 3,
+        "description": "Extend existing health_check; micro-benchmark suite; dashboard in notebook settings.",
+        "dependencies": ["EPIC-001"],
+        "filestotouch": [
+          "backend/services/local_discovery.py",
+          "backend/services/benchmark.py",
+          "frontend/components/model-health.tsx"
+        ],
+        "milestone": "MVP-30d",
+        "acceptance_criteria": [
+          "GET /api/v1/local-models probes Ollama (11434), LM Studio (1234), OpenWebUI",
+          "Benchmark runs 3 sample prompts per model, caches results",
+          "Notebook settings shows latency/cost matrix with refresh button"
+        ]
+      },
+      {
+        "id": "EPIC-004",
+        "title": "Tool SDK and Agent Runtime",
+        "priority": "medium",
+        "estimate_weeks": 5,
+        "description": "Sandbox runner for tools; agent DSL parser; integrate with chat as function calling.",
+        "dependencies": ["EPIC-001"],
+        "filestotouch": [
+          "backend/services/agent_runtime.py",
+          "backend/services/tool_sandbox.py",
+          "frontend/app/notebooks/[id]/agents/page.tsx"
+        ],
+        "milestone": "MVP-90d",
+        "acceptance_criteria": [
+          "ToolRegistry loads HTTP/Python tools from notebook config",
+          "Agent executor parses YAML DSL and runs tools in sandbox",
+          "Chat supports tool calls with intermediate reasoning steps"
+        ]
+      },
+      {
+        "id": "EPIC-005",
+        "title": "Advanced Search, Retrieval, Citations",
+        "priority": "high",
+        "estimate_weeks": 4,
+        "description": "Paragraph anchors in SurrealDB index; multi-hop chain; cited-by graph.",
+        "dependencies": ["EPIC-001"],
+        "filestotouch": [
+          "backend/services/retriever.py",
+          "backend/db/migrations/addparagraphanchors.sql",
+          "frontend/components/citation-popover.tsx"
+        ],
+        "milestone": "MVP-90d",
+        "acceptance_criteria": [
+          "Search returns docid:paraid with char offsets",
+          "Multi-hop QA via /api/v1/multi-hop with reasoning chain",
+          "Cited-by tab shows graph of note → source relations"
+        ]
+      },
+      {
+        "id": "EPIC-006",
+        "title": "Lightweight Knowledge Graph and Research UX",
+        "priority": "medium",
+        "estimate_weeks": 8,
+        "description": "Auto-build KG from ingested content, concept map view, AI-suggested backlinks, and research timeline.",
+        "dependencies": ["EPIC-005", "EPIC-004"],
+        "milestone": "MVP-180d",
+        "acceptance_criteria": [
+          "KG schema defined and incremental updater implemented",
+          "Concept map UI with AI labels and similarity scores",
+          "Backlink suggestions surfaced and accept/rejectable",
+          "Timeline tracks learning progression per notebook"
+        ]
+      },
+      {
+        "id": "EPIC-007",
+        "title": "Advanced Ingestion and Transformation Marketplace",
+        "priority": "medium",
+        "estimate_weeks": 8,
+        "description": "YouTube/Podcast RSS import with AI chaptering, OCR with LLM correction, transformation recipes marketplace, batch pipelines.",
+        "dependencies": ["EPIC-005"],
+        "milestone": "MVP-180d",
+        "acceptance_criteria": [
+          "RSS/YouTube importer with chaptering pipeline",
+          "OCR pipeline with LLM post-correction",
+          "Recipe format (YAML/JSON) and marketplace scaffold",
+          "Batch watcher for folders/S3/RSS with re-embed triggers"
+        ]
+      },
+      {
+        "id": "EPIC-008",
+        "title": "Collaboration, Multi-tenant, and Role-aware AI",
+        "priority": "high",
+        "estimate_weeks": 10,
+        "description": "Permissions, tenancy, role-aware AI personas, review mode with inline comments.",
+        "dependencies": ["EPIC-001", "EPIC-005"],
+        "milestone": "MVP-365d",
+        "acceptance_criteria": [
+          "Multi-tenant model with notebook-level ACLs",
+          "Role-aware AI responses (student/PI/PM) toggleable",
+          "Review mode supports inline comments and AI draft suggestions",
+          "Audit logs for AI actions and tool executions"
+        ]
+      },
+      {
+        "id": "EPIC-009",
+        "title": "Automation APIs, Connectors, and CLI",
+        "priority": "medium",
+        "estimate_weeks": 6,
+        "description": "Webhooks + workflows UI, native connectors (Notion/Obsidian/Zotero/GitHub), CLI client, extension SDK.",
+        "dependencies": ["EPIC-004"],
+        "milestone": "MVP-180d",
+        "acceptance_criteria": [
+          "Webhook engine with UI to create triggers",
+          "Connector adapters for Notion and GitHub (alpha)",
+          "CLI client for basic notebook operations",
+          "Extension SDK docs and sample extension"
+        ]
+      },
+      {
+        "id": "EPIC-010",
+        "title": "UX Onboarding, Deployment Profiles, and Cost Dashboard",
+        "priority": "high",
+        "estimate_weeks": 4,
+        "description": "Interactive onboarding wizard, provider detection, deployment presets, cost dashboard with optimization suggestions.",
+        "dependencies": ["EPIC-001", "EPIC-003"],
+        "milestone": "MVP-30d",
+        "acceptance_criteria": [
+          "Onboarding wizard detects local/remote providers",
+          "Deployment presets for laptop/NAS/VPS",
+          "Cost dashboard shows per-model cost estimates and suggestions",
+          "User can set cost/latency policy defaults"
+        ]
+      },
+      {
+        "id": "EPIC-011",
+        "title": "AI Thinking Features",
+        "priority": "medium",
+        "estimate_weeks": 3,
+        "description": "Toggleable chain-of-thought views, hypothesis mode, AI self-evaluation panel.",
+        "dependencies": ["EPIC-002", "EPIC-005"],
+        "milestone": "MVP-90d",
+        "acceptance_criteria": [
+          "CoT toggle available per query",
+          "Hypothesis mode with hypothesis/evidence/next steps UI",
+          "Self-evaluation panel shows alternative takes and confidence"
+        ]
+      }
+    ],
+    "issue_templates": {
+      "epic_template": {
+        "title": "[EPIC] {short-title}",
+        "body": "## Summary\n\nGoal: {one-line goal}\n\nStack: FastAPI/Next.js/SurrealDB\n\nFiles: {list}\n\nAcceptance Criteria:\n- {criterion 1}\n- {criterion 2}\n\nDependencies: {EPIC IDs}\n\nEstimate: {weeks} | Milestone: {milestone}\n\nMigration needed? Y/N\n\nAPI changes? {endpoints}"
+      },
+      "feature_issue": {
+        "title": "[FEATURE] {area}/{short-title}",
+        "body": "## Summary\n\nWhat: {feature}\nWhy: {value}\n\nDesign: {Figma/JSON schema}\n\nFiles:\n- Backend: {py files}\n- Frontend: {tsx files}\n- DB: {schema changes}\n\nAcceptance:\n- {test 1}\n\nEstimate: {points}"
+      },
+      "bug_issue": {
+        "title": "[BUG] {short-title}",
+        "body": "## Summary\n\nObserved: {what happens}\n\nExpected: {what should happen}\n\nSteps to Reproduce:\n1. {step}\n2. {step}\n\nEnvironment: {OS, backend, model}\n\nLogs / Screenshots: {attach}\n\nSeverity: {low|medium|high}\n\nLabels: bug, {area}"
+      },
+      "pr_template": {
+        "title": "{PR Title}",
+        "body": "## Summary\n\n{Short description of change}\n\n## Related Issues\n\n- Closes #{issue-number}\n\n## Implementation Notes\n\n{details}\n\n## Testing\n\n- {test 1}\n- {test 2}\n\n## Checklist\n\n- [ ] Unit tests added\n- [ ] Integration tests added\n- [ ] Documentation updated\n- [ ] Changelog entry"
+      }
+    },
+    "labels": [
+      "area:models", "area:routing", "area:agents", "area:search",
+      "area:frontend", "area:backend", "area:surrealdb",
+      "priority:high", "priority:medium",
+      "type:feature", "type:bug", "type:migration",
+      "status:mvp-30d"
+    ],
+    "milestones": [
+      {
+        "id": "MVP-30d",
+        "title": "MVP Routing + Local (30d)",
+        "due": "2026-03-18",
+        "epics": ["EPIC-001", "EPIC-002", "EPIC-003"]
+      },
+      {
+        "id": "MVP-90d",
+        "title": "Core Infra 90 days",
+        "dueoffsetdays": 90,
+        "epics": ["EPIC-004", "EPIC-005", "EPIC-011"]
+      },
+      {
+        "id": "MVP-180d",
+        "title": "Agents & Ingestion 180 days",
+        "dueoffsetdays": 180,
+        "epics": ["EPIC-006", "EPIC-007", "EPIC-009"]
+      },
+      {
+        "id": "MVP-365d",
+        "title": "Scale & Collaboration 365 days",
+        "dueoffsetdays": 365,
+        "epics": ["EPIC-008"]
+      }
+    ],
+    "interfacesandschemas": {
+      "modeladapterinterface": {
+        "adapter_id": "string",
+        "display_name": "string",
+        "capabilities": ["text-generation", "code", "vision", "long-context", "summarization", "math"],
+        "modalities": ["text", "image", "audio"],
+        "costestimateper1ktokens_usd": "number",
+        "latencyestimatems": "number",
+        "supports_streaming": "boolean",
+        "health_check": {
+          "endpoint": "string",
+          "timeout_ms": "number"
+        },
+        "invokesignature": "invoke(prompt, options) -> {response, tokensused, latency_ms, metadata}",
+        "metadata": {
+          "version": "string",
+          "source": "local|remote",
+          "tags": ["string"]
+        }
+      },
+      "routingruleschema": {
+        "rules": [
+          {
+            "id": "string",
+            "priority": "number",
+            "match": {
+              "task_types": ["string"],
+              "tags": ["string"],
+              "sensitivity": "public|private|secret"
+            },
+            "action": {
+              "adapter_preference": ["string"],
+              "fallback": ["string"],
+              "splitbytask": "boolean",
+              "maxcostusdper1k_tokens": "number"
+            }
+          }
+        ],
+        "default": {
+          "adapter_preference": ["string"],
+          "fallback": ["string"]
+        }
+      },
+      "taskclassifierspec": {
+        "input": {
+          "prompt_text": "string",
+          "context_metadata": {
+            "notebook_tags": ["string"],
+            "user_role": "string"
+          }
+        },
+        "output": {
+          "task_type": "summarize|code|math|vision|qa|long-context|other",
+          "confidence": "0.0-1.0",
+          "explainability": "string"
+        }
+      },
+      "localstackprobe_spec": {
+        "probe_steps": [
+          "scan common ports and unix sockets for known runtimes",
+          "call health_check endpoint of discovered runtimes",
+          "run micro-benchmark: sample prompt(s) measuring latency and tokens/sec",
+          "record results with timestamp and host identifier"
+        ],
+        "output": {
+          "host": "string",
+          "runtime": "ollama|lmstudio|custom",
+          "models": [
+            {
+              "model_id": "string",
+              "latency_ms": "number",
+              "tokenspersec": "number",
+              "last_checked": "ISO8601"
+            }
+          ]
+        }
+      },
+      "toolsdkspec": {
+        "tool_manifest": {
+          "tool_id": "string",
+          "name": "string",
+          "type": "http|python|shell|overlay365",
+          "input_schema": "JSON Schema",
+          "output_schema": "JSON Schema",
+          "security": {
+            "allowed_hosts": ["string"],
+            "timeout_ms": "number",
+            "resource_limits": {
+              "cpu": "number",
+              "memory_mb": "number"
+            }
+          }
+        }
+      },
+      "knowledgegraphschema": {
+        "nodes": {
+          "id": "string",
+          "type": "entity|topic|document|concept",
+          "labels": ["string"],
+          "embeddingvectorid": "string",
+          "metadata": {}
+        },
+        "edges": {
+          "source": "node_id",
+          "target": "node_id",
+          "type": "cooccurrence|citation|inferred_relation|backlink",
+          "weight": "number",
+          "evidence": ["docid:paragraphid"]
+        }
+      },
+      "ingestionpipelinespec": {
+        "recipe_example": {
+          "id": "yt-podcast-chaptering-v1",
+          "sources": ["youtube:channelorvideo_id", "rss:url"],
+          "steps": [
+            {"type": "download_audio"},
+            {"type": "transcribe", "model": "whisper-like"},
+            {"type": "chaptering", "model": "llm", "params": {"minchapterlength_sec": 60}},
+            {"type": "embed", "backend": "openai-embeddings|local-embedder"},
+            {"type": "store", "index": "default"}
+          ],
+          "on_failure": {"retry": 3, "notify": "webhook"}
+        }
+      },
+      "retrievalandcitation_spec": {
+        "response_format": {
+          "answer_text": "string",
+          "sources": [
+            {
+              "doc_id": "string",
+              "paragraph_id": "string",
+              "char_range": "start-end",
+              "anchor_url": "string",
+              "confidence": "0.0-1.0",
+              "retrieval_score": "number"
+            }
+          ],
+          "reasoning_chain": [
+            {"step": "string", "evidence": ["docid:paragraphid"], "model_confidence": "0.0-1.0"}
+          ]
+        }
+      }
+    },
+    "ciandtesting": {
+      "unit_tests": "Adapters, classifier, and tool SDK must have unit tests with >=80% coverage.",
+      "integration_tests": "End-to-end tests for routing rules, local discovery, and agent execution in CI with mocked runtimes.",
+      "benchmarks": "Micro-benchmark suite for latency and throughput; run nightly and publish artifacts."
+    },
+    "observabilityandtelemetry": {
+      "events": [
+        "model_invoke",
+        "routing_decision",
+        "task_classification",
+        "tool_execution",
+        "ingestionjobstatus"
+      ],
+      "metrics": [
+        {"name": "medianlatencyms", "description": "Median model invocation latency"},
+        {"name": "routingadoptionrate", "description": "Percent of notebooks with custom routing rules"},
+        {"name": "classifier_accuracy", "description": "Task classifier accuracy on labeled set"},
+        {"name": "costper1ktokensusd", "description": "Estimated cost per 1k tokens per model"}
+      ],
+      "logs": "Structured JSON logs with correlation IDs for tracing agent workflows"
+    },
+    "securityandprivacy": {
+      "principles": [
+        "Default to local models when available for private notebooks",
+        "Sandbox all tool executions",
+        "Notebook-level encryption for sensitive content",
+        "Audit logs for model and tool invocations"
+      ],
+      "recommendations": [
+        "Allow admins to set global model allowlist/denylist",
+        "Expose per-notebook data residency settings",
+        "Require retriever evidence for any claim in citation mode"
+      ]
+    },
+    "deliverablechecklistforfirst5_tasks": [
+      {
+        "task": "Implement Model Adapter Interface",
+        "owner": "core-team",
+        "estimate_days": 7,
+        "deliverables": ["interface spec", "adapter examples", "unit tests"]
+      },
+      {
+        "task": "Per-notebook Routing UI",
+        "owner": "frontend",
+        "estimate_days": 7,
+        "deliverables": ["routing editor", "persistence API", "integration with adapter layer"]
+      },
+      {
+        "task": "Task Classifier Service",
+        "owner": "ml",
+        "estimate_days": 7,
+        "deliverables": ["classifier model", "API", "test dataset"]
+      },
+      {
+        "task": "Local Stack Discovery Probe",
+        "owner": "infra",
+        "estimate_days": 7,
+        "deliverables": ["probe binary", "benchmarker", "dashboard integration"]
+      },
+      {
+        "task": "Citation Anchors in Search",
+        "owner": "search",
+        "estimate_days": 7,
+        "deliverables": ["index schema change", "UI anchor links", "confidence display"]
+      }
+    ],
+    "project_management": {
+      "sprintlengthdays": 14,
+      "initialteamstructure": [
+        {"team": "core", "roles": ["backend", "api", "infra"]},
+        {"team": "ml", "roles": ["ml-engineer", "data-scientist"]},
+        {"team": "frontend", "roles": ["ux", "react"]},
+        {"team": "platform", "roles": ["security", "devops"]}
+      ],
+      "release_strategy": [
+        "Release MVP features behind feature flags",
+        "Publish adapter registry and docs",
+        "Run opt-in telemetry for early adopters"
+      ]
+    },
+    "next_actions": [
+      "git checkout -b epic-001-model-routing",
+      "Create EPIC-001 issue + 3 feature tickets (adapters/UI/service)",
+      "Add DeepSeek-R1 adapter following Esperanto pattern",
+      "Test routing with local Ollama/LM Studio setup"
+    ],
+    "quickstart_commands": [
+      "git clone https://github.com/lfnovo/open-notebook.git your-fork",
+      "cd your-fork/backend && uv sync",
+      "cp .env.example .env && edit API keys",
+      "make start-all  # SurrealDB + FastAPI + Next.js",
+      "open http://localhost:8502"
+    ]
+  },
+  "document_excerpt": {
+    "sourcefile": "repon_1771280898927.txt",
+    "excerpt_sentences": [
+      "Scaffolding for prioritized roadmap, epics, issues, interfaces, and templates to implement multi-model routing, agents, KG, ingestion, retrieval, collaboration, and deployment features.",
+      "Start with EPIC-001 – it'll unlock everything else."
+    ]
+  }
+}
+
+You already have this as a single valid JSON object. Here it is again, cleanly formatted for direct use (no changes to structure or values):
+
+```json
+{
+  "scaffold": {
+    "repo": {
+      "name": "lfnovo/open-notebook",
+      "scaffolding_version": "v2",
+      "description": "Scaffolding for prioritized roadmap, epics, issues, interfaces, and templates to implement multi-model routing, agents, knowledge graph, ingestion, retrieval, collaboration, and deployment features."
+    },
+    "metadata": {
+      "author": "scaffold-generator-v2",
+      "created_at": "2026-02-16T17:27:00-05:00",
+      "assumptions": [
+        "Project uses GitHub for issues/PRs and CI",
+        "Backend services are modular and can load adapters",
+        "Local runtimes (Ollama/LM Studio) are reachable on LAN",
+        "Embeddings and retrievers are pluggable",
+        "Privacy-first defaults: prefer local models when available"
+      ],
+      "code_locations": {
+        "modeladapters": "backend/aiproviders/adapters/",
+        "routing_logic": "backend/services/routing.py",
+        "frontendroutingui": "frontend/app/notebooks/[id]/settings/routing.tsx",
+        "surrealdb_schemas": "backend/db/schemas/",
+        "content_transforms": "backend/services/transformations/"
+      }
+    },
+    "epics": [
+      {
+        "id": "EPIC-001",
+        "title": "Model Adapter Layer and Per-Notebook Routing",
+        "priority": "high",
+        "estimate_weeks": 3,
+        "description": "Extend Esperanto adapters; add per-notebook routing table in SurrealDB; Next.js UI in notebook settings; integrate with existing /api/v1/chat endpoint.",
+        "filestotouch": [
+          "backend/aiproviders/adapters/deepseekr1.py",
+          "backend/services/routing.py",
+          "backend/api/v1/models.py",
+          "frontend/app/notebooks/[id]/settings/routing.tsx"
+        ],
+        "milestone": "MVP-30d",
+        "acceptance_criteria": [
+          "New adapters (DeepSeek-R1, Qwen3, Gemini-2.0) implement IModelAdapter interface",
+          "SurrealDB table notebookroutingrules created via migration",
+          "Notebook settings page shows routing editor (priority list + task rules)",
+          "Chat endpoint respects notebook routing rules and logs decisions"
+        ]
+      },
+      {
+        "id": "EPIC-002",
+        "title": "Task Classifier and Auto-Selector",
+        "priority": "high",
+        "estimate_weeks": 2,
+        "description": "FastAPI service classifying prompts; capability matrix in JSON config; auto-route integration.",
+        "dependencies": [
+          "EPIC-001"
+        ],
+        "filestotouch": [
+          "backend/services/task_classifier.py",
+          "backend/config/model_capabilities.json"
+        ],
+        "milestone": "MVP-30d",
+        "acceptance_criteria": [
+          "POST /api/v1/classify-task returns task_type + confidence",
+          "Auto-selector service in routing.py uses classifier output",
+          "Test suite with 100+ labeled prompts achieves >85% accuracy"
+        ]
+      },
+      {
+        "id": "EPIC-003",
+        "title": "Local Stack Discovery and Benchmarker",
+        "priority": "high",
+        "estimate_weeks": 3,
+        "description": "Extend existing health_check; micro-benchmark suite; dashboard in notebook settings.",
+        "dependencies": [
+          "EPIC-001"
+        ],
+        "filestotouch": [
+          "backend/services/local_discovery.py",
+          "backend/services/benchmark.py",
+          "frontend/components/model-health.tsx"
+        ],
+        "milestone": "MVP-30d",
+        "acceptance_criteria": [
+          "GET /api/v1/local-models probes Ollama (11434), LM Studio (1234), OpenWebUI",
+          "Benchmark runs 3 sample prompts per model, caches results",
+          "Notebook settings shows latency/cost matrix with refresh button"
+        ]
+      },
+      {
+        "id": "EPIC-004",
+        "title": "Tool SDK and Agent Runtime",
+        "priority": "medium",
+        "estimate_weeks": 5,
+        "description": "Sandbox runner for tools; agent DSL parser; integrate with chat as function calling.",
+        "dependencies": [
+          "EPIC-001"
+        ],
+        "filestotouch": [
+          "backend/services/agent_runtime.py",
+          "backend/services/tool_sandbox.py",
+          "frontend/app/notebooks/[id]/agents/page.tsx"
+        ],
+        "milestone": "MVP-90d",
+        "acceptance_criteria": [
+          "ToolRegistry loads HTTP/Python tools from notebook config",
+          "Agent executor parses YAML DSL and runs tools in sandbox",
+          "Chat supports tool calls with intermediate reasoning steps"
+        ]
+      },
+      {
+        "id": "EPIC-005",
+        "title": "Advanced Search, Retrieval, Citations",
+        "priority": "high",
+        "estimate_weeks": 4,
+        "description": "Paragraph anchors in SurrealDB index; multi-hop chain; cited-by graph.",
+        "dependencies": [
+          "EPIC-001"
+        ],
+        "filestotouch": [
+          "backend/services/retriever.py",
+          "backend/db/migrations/addparagraphanchors.sql",
+          "frontend/components/citation-popover.tsx"
+        ],
+        "milestone": "MVP-90d",
+        "acceptance_criteria": [
+          "Search returns docid:paraid with char offsets",
+          "Multi-hop QA via /api/v1/multi-hop with reasoning chain",
+          "Cited-by tab shows graph of note → source relations"
+        ]
+      },
+      {
+        "id": "EPIC-006",
+        "title": "Lightweight Knowledge Graph and Research UX",
+        "priority": "medium",
+        "estimate_weeks": 8,
+        "description": "Auto-build KG from ingested content, concept map view, AI-suggested backlinks, and research timeline.",
+        "dependencies": [
+          "EPIC-005",
+          "EPIC-004"
+        ],
+        "milestone": "MVP-180d",
+        "acceptance_criteria": [
+          "KG schema defined and incremental updater implemented",
+          "Concept map UI with AI labels and similarity scores",
+          "Backlink suggestions surfaced and accept/rejectable",
+          "Timeline tracks learning progression per notebook"
+        ]
+      },
+      {
+        "id": "EPIC-007",
+        "title": "Advanced Ingestion and Transformation Marketplace",
+        "priority": "medium",
+        "estimate_weeks": 8,
+        "description": "YouTube/Podcast RSS import with AI chaptering, OCR with LLM correction, transformation recipes marketplace, batch pipelines.",
+        "dependencies": [
+          "EPIC-005"
+        ],
+        "milestone": "MVP-180d",
+        "acceptance_criteria": [
+          "RSS/YouTube importer with chaptering pipeline",
+          "OCR pipeline with LLM post-correction",
+          "Recipe format (YAML/JSON) and marketplace scaffold",
+          "Batch watcher for folders/S3/RSS with re-embed triggers"
+        ]
+      },
+      {
+        "id": "EPIC-008",
+        "title": "Collaboration, Multi-tenant, and Role-aware AI",
+        "priority": "high",
+        "estimate_weeks": 10,
+        "description": "Permissions, tenancy, role-aware AI personas, review mode with inline comments.",
+        "dependencies": [
+          "EPIC-001",
+          "EPIC-005"
+        ],
+        "milestone": "MVP-365d",
+        "acceptance_criteria": [
+          "Multi-tenant model with notebook-level ACLs",
+          "Role-aware AI responses (student/PI/PM) toggleable",
+          "Review mode supports inline comments and AI draft suggestions",
+          "Audit logs for AI actions and tool executions"
+        ]
+      },
+      {
+        "id": "EPIC-009",
+        "title": "Automation APIs, Connectors, and CLI",
+        "priority": "medium",
+        "estimate_weeks": 6,
+        "description": "Webhooks + workflows UI, native connectors (Notion/Obsidian/Zotero/GitHub), CLI client, extension SDK.",
+        "dependencies": [
+          "EPIC-004"
+        ],
+        "milestone": "MVP-180d",
+        "acceptance_criteria": [
+          "Webhook engine with UI to create triggers",
+          "Connector adapters for Notion and GitHub (alpha)",
+          "CLI client for basic notebook operations",
+          "Extension SDK docs and sample extension"
+        ]
+      },
+      {
+        "id": "EPIC-010",
+        "title": "UX Onboarding, Deployment Profiles, and Cost Dashboard",
+        "priority": "high",
+        "estimate_weeks": 4,
+        "description": "Interactive onboarding wizard, provider detection, deployment presets, cost dashboard with optimization suggestions.",
+        "dependencies": [
+          "EPIC-001",
+          "EPIC-003"
+        ],
+        "milestone": "MVP-30d",
+        "acceptance_criteria": [
+          "Onboarding wizard detects local/remote providers",
+          "Deployment presets for laptop/NAS/VPS",
+          "Cost dashboard shows per-model cost estimates and suggestions",
+          "User can set cost/latency policy defaults"
+        ]
+      },
+      {
+        "id": "EPIC-011",
+        "title": "AI Thinking Features",
+        "priority": "medium",
+        "estimate_weeks": 3,
+        "description": "Toggleable chain-of-thought views, hypothesis mode, AI self-evaluation panel.",
+        "dependencies": [
+          "EPIC-002",
+          "EPIC-005"
+        ],
+        "milestone": "MVP-90d",
+        "acceptance_criteria": [
+          "CoT toggle available per query",
+          "Hypothesis mode with hypothesis/evidence/next steps UI",
+          "Self-evaluation panel shows alternative takes and confidence"
+        ]
+      }
+    ],
+    "issue_templates": {
+      "epic_template": {
+        "title": "[EPIC] {short-title}",
+        "body": "## Summary\n\nGoal: {one-line goal}\n\nStack: FastAPI/Next.js/SurrealDB\n\nFiles: {list}\n\nAcceptance Criteria:\n- {criterion 1}\n- {criterion 2}\n\nDependencies: {EPIC IDs}\n\nEstimate: {weeks} | Milestone: {milestone}\n\nMigration needed? Y/N\n\nAPI changes? {endpoints}"
+      },
+      "feature_issue": {
+        "title": "[FEATURE] {area}/{short-title}",
+        "body": "## Summary\n\nWhat: {feature}\nWhy: {value}\n\nDesign: {Figma/JSON schema}\n\nFiles:\n- Backend: {py files}\n- Frontend: {tsx files}\n- DB: {schema changes}\n\nAcceptance:\n- {test 1}\n\nEstimate: {points}"
+      },
+      "bug_issue": {
+        "title": "[BUG] {short-title}",
+        "body": "## Summary\n\nObserved: {what happens}\n\nExpected: {what should happen}\n\nSteps to Reproduce:\n1. {step}\n2. {step}\n\nEnvironment: {OS, backend, model}\n\nLogs / Screenshots: {attach}\n\nSeverity: {low|medium|high}\n\nLabels: bug, {area}"
+      },
+      "pr_template": {
+        "title": "{PR Title}",
+        "body": "## Summary\n\n{Short description of change}\n\n## Related Issues\n\n- Closes #{issue-number}\n\n## Implementation Notes\n\n{details}\n\n## Testing\n\n- {test 1}\n- {test 2}\n\n## Checklist\n\n- [ ] Unit tests added\n- [ ] Integration tests added\n- [ ] Documentation updated\n- [ ] Changelog entry"
+      }
+    },
+    "labels": [
+      "area:models",
+      "area:routing",
+      "area:agents",
+      "area:search",
+      "area:frontend",
+      "area:backend",
+      "area:surrealdb",
+      "priority:high",
+      "priority:medium",
+      "type:feature",
+      "type:bug",
+      "type:migration",
+      "status:mvp-30d"
+    ],
+    "milestones": [
+      {
+        "id": "MVP-30d",
+        "title": "MVP Routing + Local (30d)",
+        "due": "2026-03-18",
+        "epics": [
+          "EPIC-001",
+          "EPIC-002",
+          "EPIC-003"
+        ]
+      },
+      {
+        "id": "MVP-90d",
+        "title": "Core Infra 90 days",
+        "dueoffsetdays": 90,
+        "epics": [
+          "EPIC-004",
+          "EPIC-005",
+          "EPIC-011"
+        ]
+      },
+      {
+        "id": "MVP-180d",
+        "title": "Agents & Ingestion 180 days",
+        "dueoffsetdays": 180,
+        "epics": [
+          "EPIC-006",
+          "EPIC-007",
+          "EPIC-009"
+        ]
+      },
+      {
+        "id": "MVP-365d",
+        "title": "Scale & Collaboration 365 days",
+        "dueoffsetdays": 365,
+        "epics": [
+          "EPIC-008"
+        ]
+      }
+    ],
+    "interfacesandschemas": {
+      "modeladapterinterface": {
+        "adapter_id": "string",
+        "display_name": "string",
+        "capabilities": [
+          "text-generation",
+          "code",
+          "vision",
+          "long-context",
+          "summarization",
+          "math"
+        ],
+        "modalities": [
+          "text",
+          "image",
+          "audio"
+        ],
+        "costestimateper1ktokens_usd": "number",
+        "latencyestimatems": "number",
+        "supports_streaming": "boolean",
+        "health_check": {
+          "endpoint": "string",
+          "timeout_ms": "number"
+        },
+        "invokesignature": "invoke(prompt, options) -> {response, tokensused, latency_ms, metadata}",
+        "metadata": {
+          "version": "string",
+          "source": "local|remote",
+          "tags": [
+            "string"
+          ]
+        }
+      },
+      "routingruleschema": {
+        "rules": [
+          {
+            "id": "string",
+            "priority": "number",
+            "match": {
+              "task_types": [
+                "string"
+              ],
+              "tags": [
+                "string"
+              ],
+              "sensitivity": "public|private|secret"
+            },
+            "action": {
+              "adapter_preference": [
+                "string"
+              ],
+              "fallback": [
+                "string"
+              ],
+              "splitbytask": "boolean",
+              "maxcostusdper1k_tokens": "number"
+            }
+          }
+        ],
+        "default": {
+          "adapter_preference": [
+            "string"
+          ],
+          "fallback": [
+            "string"
+          ]
+        }
+      },
+      "taskclassifierspec": {
+        "input": {
+          "prompt_text": "string",
+          "context_metadata": {
+            "notebook_tags": [
+              "string"
+            ],
+            "user_role": "string"
+          }
+        },
+        "output": {
+          "task_type": "summarize|code|math|vision|qa|long-context|other",
+          "confidence": "0.0-1.0",
+          "explainability": "string"
+        }
+      },
+      "localstackprobe_spec": {
+        "probe_steps": [
+          "scan common ports and unix sockets for known runtimes",
+          "call health_check endpoint of discovered runtimes",
+          "run micro-benchmark: sample prompt(s) measuring latency and tokens/sec",
+          "record results with timestamp and host identifier"
+        ],
+        "output": {
+          "host": "string",
+          "runtime": "ollama|lmstudio|custom",
+          "models": [
+            {
+              "model_id": "string",
+              "latency_ms": "number",
+              "tokenspersec": "number",
+              "last_checked": "ISO8601"
+            }
+          ]
+        }
+      },
+      "toolsdkspec": {
+        "tool_manifest": {
+          "tool_id": "string",
+          "name": "string",
+          "type": "http|python|shell|overlay365",
+          "input_schema": "JSON Schema",
+          "output_schema": "JSON Schema",
+          "security": {
+            "allowed_hosts": [
+              "string"
+            ],
+            "timeout_ms": "number",
+            "resource_limits": {
+              "cpu": "number",
+              "memory_mb": "number"
+            }
+          }
+        }
+      },
+      "knowledgegraphschema": {
+        "nodes": {
+          "id": "string",
+          "type": "entity|topic|document|concept",
+          "labels": [
+            "string"
+          ],
+          "embeddingvectorid": "string",
+          "metadata": {}
+        },
+        "edges": {
+          "source": "node_id",
+          "target": "node_id",
+          "type": "cooccurrence|citation|inferred_relation|backlink",
+          "weight": "number",
+          "evidence": [
+            "docid:paragraphid"
+          ]
+        }
+      },
+      "ingestionpipelinespec": {
+        "recipe_example": {
+          "id": "yt-podcast-chaptering-v1",
+          "sources": [
+            "youtube:channelorvideo_id",
+            "rss:url"
+          ],
+          "steps": [
+            {
+              "type": "download_audio"
+            },
+            {
+              "type": "transcribe",
+              "model": "whisper-like"
+            },
+            {
+              "type": "chaptering",
+              "model": "llm",
+              "params": {
+                "minchapterlength_sec": 60
+              }
+            },
+            {
+              "type": "embed",
+              "backend": "openai-embeddings|local-embedder"
+            },
+            {
+              "type": "store",
+              "index": "default"
+            }
+          ],
+          "on_failure": {
+            "retry": 3,
+            "notify": "webhook"
+          }
+        }
+      },
+      "retrievalandcitation_spec": {
+        "response_format": {
+          "answer_text": "string",
+          "sources": [
+            {
+              "doc_id": "string",
+              "paragraph_id": "string",
+              "char_range": "start-end",
+              "anchor_url": "string",
+              "confidence": "0.0-1.0",
+              "retrieval_score": "number"
+            }
+          ],
+          "reasoning_chain": [
+            {
+              "step": "string",
+              "evidence": [
+                "docid:paragraphid"
+              ],
+              "model_confidence": "0.0-1.0"
+            }
+          ]
+        }
+      }
+    },
+    "ciandtesting": {
+      "unit_tests": "Adapters, classifier, and tool SDK must have unit tests with >=80% coverage.",
+      "integration_tests": "End-to-end tests for routing rules, local discovery, and agent execution in CI with mocked runtimes.",
+      "benchmarks": "Micro-benchmark suite for latency and throughput; run nightly and publish artifacts."
+    },
+    "observabilityandtelemetry": {
+      "events": [
+        "model_invoke",
+        "routing_decision",
+        "task_classification",
+        "tool_execution",
+        "ingestionjobstatus"
+      ],
+      "metrics": [
+        {
+          "name": "medianlatencyms",
+          "description": "Median model invocation latency"
+        },
+        {
+          "name": "routingadoptionrate",
+          "description": "Percent of notebooks with custom routing rules"
+        },
+        {
+          "name": "classifier_accuracy",
+          "description": "Task classifier accuracy on labeled set"
+        },
+        {
+          "name": "costper1ktokensusd",
+          "description": "Estimated cost per 1k tokens per model"
+        }
+      ],
+      "logs": "Structured JSON logs with correlation IDs for tracing agent workflows"
+    },
+    "securityandprivacy": {
+      "principles": [
+        "Default to local models when available for private notebooks",
+        "Sandbox all tool executions",
+        "Notebook-level encryption for sensitive content",
+        "Audit logs for model and tool invocations"
+      ],
+      "recommendations": [
+        "Allow admins to set global model allowlist/denylist",
+        "Expose per-notebook data residency settings",
+        "Require retriever evidence for any claim in citation mode"
+      ]
+    },
+    "deliverablechecklistforfirst5_tasks": [
+      {
+        "task": "Implement Model Adapter Interface",
+        "owner": "core-team",
+        "estimate_days": 7,
+        "deliverables": [
+          "interface spec",
+          "adapter examples",
+          "unit tests"
+        ]
+      },
+      {
+        "task": "Per-notebook Routing UI",
+        "owner": "frontend",
+        "estimate_days": 7,
+        "deliverables": [
+          "routing editor",
+          "persistence API",
+          "integration with adapter layer"
+        ]
+      },
+      {
+        "task": "Task Classifier Service",
+        "owner": "ml",
+        "estimate_days": 7,
+        "deliverables": [
+          "classifier model",
+          "API",
+          "test dataset"
+        ]
+      },
+      {
+        "task": "Local Stack Discovery Probe",
+        "owner": "infra",
+        "estimate_days": 7,
+        "deliverables": [
+          "probe binary",
+          "benchmarker",
+          "dashboard integration"
+        ]
+      },
+      {
+        "task": "Citation Anchors in Search",
+        "owner": "search",
+        "estimate_days": 7,
+        "deliverables": [
+          "index schema change",
+          "UI anchor links",
+          "confidence display"
+        ]
+      }
+    ],
+    "project_management": {
+      "sprintlengthdays": 14,
+      "initialteamstructure": [
+        {
+          "team": "core",
+          "roles": [
+            "backend",
+            "api",
+            "infra"
+          ]
+        },
+        {
+          "team": "ml",
+          "roles": [
+            "ml-engineer",
+            "data-scientist"
+          ]
+        },
+        {
+          "team": "frontend",
+          "roles": [
+            "ux",
+            "react"
+          ]
+        },
+        {
+          "team": "platform",
+          "roles": [
+            "security",
+            "devops"
+          ]
+        }
+      ],
+      "release_strategy": [
+        "Release MVP features behind feature flags",
+        "Publish adapter registry and docs",
+        "Run opt-in telemetry for early adopters"
+      ]
+    },
+    "next_actions": [
+      "git checkout -b epic-001-model-routing",
+      "Create EPIC-001 issue + 3 feature tickets (adapters/UI/service)",
+      "Add DeepSeek-R1 adapter following Esperanto pattern",
+      "Test routing with local Ollama/LM Studio setup"
+    ],
+    "quickstart_commands": [
+      "git clone https://github.com/lfnovo/open-notebook.git your-fork",
+      "cd your-fork/backend && uv sync",
+      "cp .env.example .env && edit API keys",
+      "make start-all  # SurrealDB + FastAPI + Next.js",
+      "open http://localhost:8502"
+    ]
+  },
+  "document_excerpt": {
+    "sourcefile": "repon_1771280898927.txt",
+    "excerpt_sentences": [
+      "Scaffolding for prioritized roadmap, epics, issues, interfaces, and templates to implement multi-model routing, agents, KG, ingestion, retrieval, collaboration, and deployment features.",
+      "Start with EPIC-001 – it'll unlock everything else."
+    ]
+  }
+}ython/Node script 
