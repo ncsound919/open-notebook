@@ -12,9 +12,9 @@ from api.models import (
     TransformationResponse,
     TransformationUpdate,
 )
-from open_notebook.domain.models import Model
+from open_notebook.ai.models import Model
 from open_notebook.domain.transformation import DefaultPrompts, Transformation
-from open_notebook.exceptions import InvalidInputError
+from open_notebook.exceptions import InvalidInputError, OpenNotebookError
 from open_notebook.graphs.transformation import graph as transformation_graph
 
 router = APIRouter()
@@ -109,6 +109,8 @@ async def execute_transformation(execute_request: TransformationExecuteRequest):
 
     except HTTPException:
         raise
+    except OpenNotebookError:
+        raise  # Let global exception handlers return proper status codes
     except Exception as e:
         logger.error(f"Error executing transformation: {str(e)}")
         raise HTTPException(
@@ -123,7 +125,8 @@ async def get_default_prompt():
         default_prompts: DefaultPrompts = await DefaultPrompts.get_instance()  # type: ignore[assignment]
 
         return DefaultPromptResponse(
-            transformation_instructions=default_prompts.transformation_instructions or ""
+            transformation_instructions=default_prompts.transformation_instructions
+            or ""
         )
     except Exception as e:
         logger.error(f"Error fetching default prompt: {str(e)}")
@@ -138,7 +141,9 @@ async def update_default_prompt(prompt_update: DefaultPromptUpdate):
     try:
         default_prompts: DefaultPrompts = await DefaultPrompts.get_instance()  # type: ignore[assignment]
 
-        default_prompts.transformation_instructions = prompt_update.transformation_instructions
+        default_prompts.transformation_instructions = (
+            prompt_update.transformation_instructions
+        )
         await default_prompts.update()
 
         return DefaultPromptResponse(

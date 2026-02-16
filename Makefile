@@ -1,6 +1,6 @@
 .PHONY: run frontend check ruff database lint api start-all stop-all status clean-cache worker worker-start worker-stop worker-restart
 .PHONY: docker-buildx-prepare docker-buildx-clean docker-buildx-reset
-.PHONY: docker-push docker-push-latest docker-release tag export-docs
+.PHONY: docker-push docker-push-latest docker-release docker-build-local tag export-docs
 
 # Get version from pyproject.toml
 VERSION := $(shell grep -m1 version pyproject.toml | cut -d'"' -f2)
@@ -44,6 +44,16 @@ docker-buildx-reset: docker-buildx-clean docker-buildx-prepare
 	@echo "✅ Buildx reset complete!"
 
 # === Docker Build Targets ===
+
+# Build production image for local platform only (no push)
+docker-build-local:
+	@echo "🔨 Building production image locally ($(shell uname -m))..."
+	docker build \
+		-t $(DOCKERHUB_IMAGE):$(VERSION) \
+		-t $(DOCKERHUB_IMAGE):local \
+		.
+	@echo "✅ Built $(DOCKERHUB_IMAGE):$(VERSION) and $(DOCKERHUB_IMAGE):local"
+	@echo "Run with: docker run -p 5055:5055 -p 3000:3000 $(DOCKERHUB_IMAGE):local"
 
 # Build and push version tags ONLY (no latest) for both regular and single images
 docker-push: docker-buildx-prepare
@@ -124,9 +134,8 @@ full:
 
 
 api:
-	uv run run_api.py
+	uv run --env-file .env run_api.py
 
-# === Worker Management ===
 .PHONY: worker worker-start worker-stop worker-restart
 
 worker: worker-start

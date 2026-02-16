@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 
 from api.models import AskRequest, AskResponse, SearchRequest, SearchResponse
-from open_notebook.domain.models import Model, model_manager
+from open_notebook.ai.models import Model, model_manager
 from open_notebook.domain.notebook import text_search, vector_search
 from open_notebook.exceptions import DatabaseOperationError, InvalidInputError
 from open_notebook.graphs.ask import graph as ask_graph
@@ -102,8 +102,11 @@ async def stream_ask_response(
         yield f"data: {json.dumps(completion_data)}\n\n"
 
     except Exception as e:
+        from open_notebook.utils.error_classifier import classify_error
+
+        _, user_message = classify_error(e)
         logger.error(f"Error in ask streaming: {str(e)}")
-        error_data = {"type": "error", "message": str(e)}
+        error_data = {"type": "error", "message": user_message}
         yield f"data: {json.dumps(error_data)}\n\n"
 
 

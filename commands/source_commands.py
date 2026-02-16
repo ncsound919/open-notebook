@@ -8,12 +8,14 @@ from surreal_commands import CommandInput, CommandOutput, command
 from open_notebook.database.repository import ensure_record_id
 from open_notebook.domain.notebook import Source
 from open_notebook.domain.transformation import Transformation
+from open_notebook.exceptions import ConfigurationError
 
 try:
     from open_notebook.graphs.source import source_graph
+    from open_notebook.graphs.transformation import graph as transform_graph
 except ImportError as e:
-    logger.error(f"Failed to import source_graph: {e}")
-    raise ValueError("source_graph not available")
+    logger.error(f"Failed to import graphs: {e}")
+    raise ValueError("graphs not available")
 
 
 def full_model_dump(model):
@@ -48,11 +50,12 @@ class SourceProcessingOutput(CommandOutput):
     "process_source",
     app="open_notebook",
     retry={
-        "max_attempts": 5,
+        "max_attempts": 15,  # Handle deep queues (workaround for SurrealDB v2 transaction conflicts)
         "wait_strategy": "exponential_jitter",
         "wait_min": 1,
-        "wait_max": 30,
-        "retry_on": [RuntimeError],
+        "wait_max": 120,  # Allow queue to drain
+        "stop_on": [ValueError, ConfigurationError],  # Don't retry validation/config errors
+        "retry_log_level": "debug",  # Avoid log noise during transaction conflicts
     },
 )
 async def process_source_command(
@@ -134,19 +137,133 @@ async def process_source_command(
             processing_time=processing_time,
         )
 
-    except RuntimeError as e:
-        # Transaction conflicts should be retried by surreal-commands
-        logger.warning(f"Transaction conflict, will retry: {e}")
-        raise
-
-    except Exception as e:
-        # Other errors are permanent failures
+    except ValueError as e:
+        # Validation errors are permanent failures - don't retry
         processing_time = time.time() - start_time
         logger.error(f"Source processing failed: {e}")
-
         return SourceProcessingOutput(
             success=False,
             source_id=input_data.source_id,
             processing_time=processing_time,
             error_message=str(e),
         )
+    except Exception as e:
+        # Transient failure - will be retried (surreal-commands logs final failure)
+        logger.debug(
+            f"Transient error processing source {input_data.source_id}: {e}"
+        )
+        raise
+
+
+# =============================================================================
+# RUN TRANSFORMATION COMMAND
+# =============================================================================
+
+
+class RunTransformationInput(CommandInput):
+    """Input for running a transformation on an existing source."""
+
+    source_id: str
+    transformation_id: str
+
+
+class RunTransformationOutput(CommandOutput):
+    """Output from transformation command."""
+
+    success: bool
+    source_id: str
+    transformation_id: str
+    processing_time: float
+    error_message: Optional[str] = None
+
+
+@command(
+    "run_transformation",
+    app="open_notebook",
+    retry={
+        "max_attempts": 5,
+        "wait_strategy": "exponential_jitter",
+        "wait_min": 1,
+        "wait_max": 60,
+        "stop_on": [ValueError, ConfigurationError],  # Don't retry validation/config errors
+        "retry_log_level": "debug",
+    },
+)
+async def run_transformation_command(
+    input_data: RunTransformationInput,
+) -> RunTransformationOutput:
+    """
+    Run a transformation on an existing source to generate an insight.
+
+    This command runs the transformation graph which:
+    1. Loads the source and transformation
+    2. Calls the LLM to generate insight content
+    3. Creates the insight via create_insight command (fire-and-forget)
+
+    Use this command for UI-triggered insight generation to avoid blocking
+    the HTTP request while the LLM processes.
+
+    Retry Strategy:
+    - Retries up to 5 times for transient failures (network, timeout, etc.)
+    - Uses exponential-jitter backoff (1-60s)
+    - Does NOT retry permanent failures (ValueError for validation errors)
+    """
+    start_time = time.time()
+
+    try:
+        logger.info(
+            f"Running transformation {input_data.transformation_id} "
+            f"on source {input_data.source_id}"
+        )
+
+        # Load source
+        source = await Source.get(input_data.source_id)
+        if not source:
+            raise ValueError(f"Source '{input_data.source_id}' not found")
+
+        # Load transformation
+        transformation = await Transformation.get(input_data.transformation_id)
+        if not transformation:
+            raise ValueError(
+                f"Transformation '{input_data.transformation_id}' not found"
+            )
+
+        # Run transformation graph (includes LLM call + insight creation)
+        await transform_graph.ainvoke(
+            input=dict(source=source, transformation=transformation)
+        )
+
+        processing_time = time.time() - start_time
+        logger.info(
+            f"Successfully ran transformation {input_data.transformation_id} "
+            f"on source {input_data.source_id} in {processing_time:.2f}s"
+        )
+
+        return RunTransformationOutput(
+            success=True,
+            source_id=input_data.source_id,
+            transformation_id=input_data.transformation_id,
+            processing_time=processing_time,
+        )
+
+    except ValueError as e:
+        # Validation errors are permanent failures - don't retry
+        processing_time = time.time() - start_time
+        logger.error(
+            f"Failed to run transformation {input_data.transformation_id} "
+            f"on source {input_data.source_id}: {e}"
+        )
+        return RunTransformationOutput(
+            success=False,
+            source_id=input_data.source_id,
+            transformation_id=input_data.transformation_id,
+            processing_time=processing_time,
+            error_message=str(e),
+        )
+    except Exception as e:
+        # Transient failure - will be retried (surreal-commands logs final failure)
+        logger.debug(
+            f"Transient error running transformation {input_data.transformation_id} "
+            f"on source {input_data.source_id}: {e}"
+        )
+        raise
