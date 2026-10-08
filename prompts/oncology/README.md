@@ -2,7 +2,7 @@
 
 Render with experiment data and paste the result as the episode **briefing**
 when using the `oncology_experiment_log`, `oncology_paper`, or
-`oncology_debate` episode profiles (seeded by migration 14).
+`oncology_debate` episode profiles (seeded by migration 26).
 
 - `experiment_log.jinja` — data: `experiment_id, date, hypothesis, methods,
   results, artifacts` — produces a structured lab-log briefing.

@@ -32,7 +32,7 @@ it. Credential: `openai_compatible`, base_url `http://tts-f5:8000/v1`
 
 - `tts_provider: "openai_compatible"`, `tts_model`: `kokoro` or `f5-tts`
 - `voice_id`: kokoro preset name (`af_heart`) or `file://<voice-id>` for F5
-- Seeded profiles (migration 15): `oss_kokoro_cast`, `oss_clone_host`,
+- Seeded profiles (migration 27): `oss_kokoro_cast`, `oss_clone_host`,
   episode `oncology_oss_debate` (same debate format as `oncology_debate`,
   voiced by OSS).
 
