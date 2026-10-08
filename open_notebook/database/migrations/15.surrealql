@@ -1,0 +1,58 @@
+-- Migration 15: OSS voice lane profiles (Kokoro presets + F5 clone host).
+-- tts_provider "openai_compatible" routes through Esperanto to the
+-- self-hosted servers from docker-compose (tts-kokoro :8001, tts-f5 :8002).
+-- See docs/oss-voice.md. Endpoints are compose-network URLs; override per
+-- deployment via the openai_compatible credential base_url.
+
+insert into speaker_profile
+[
+    {
+        name: "oss_kokoro_cast",
+        description: "Human preset voices, CPU-only Kokoro server, no cloning needed",
+        tts_provider: "openai_compatible",
+        tts_model: "kokoro",
+        speakers: [
+            {
+                name: "Maya",
+                voice_id: "af_heart",
+                backstory: "Warm host voice for research narration. Conversational, never flat.",
+                personality: "Engaging, clear, human rhythm with natural emphasis."
+            },
+            {
+                name: "Daniel",
+                voice_id: "am_adam",
+                backstory: "Grounded co-host voice for analysis and pushback.",
+                personality: "Measured, dry humor, deliberate pacing."
+            }
+        ]
+    },
+    {
+        name: "oss_clone_host",
+        description: "Your cloned voice via the F5 server — replace file://host with your voice id after running scripts/clone_voice.py",
+        tts_provider: "openai_compatible",
+        tts_model: "f5-tts",
+        speakers: [
+            {
+                name: "Host",
+                voice_id: "file://host",
+                backstory: "Cloned host voice. Replace with your id from scripts/clone_voice.py.",
+                personality: "Natural, conversational."
+            }
+        ]
+    }
+];
+
+insert into episode_profile
+[
+    {
+        name: "oncology_oss_debate",
+        description: "Discourse Tool debate sessions voiced by OSS voices (no paid TTS)",
+        speaker_config: "oss_kokoro_cast",
+        outline_provider: "openai",
+        outline_model: "gpt-5-mini",
+        transcript_provider: "openai",
+        transcript_model: "gpt-5-mini",
+        default_briefing: "Voice this Discourse Tool session as a debate (render via scripts/import_discourse_session.py). Claim, counterclaim grounded ONLY in shared claim cards, one concession per side, referee verdict: established / contested / experiment that settles it.",
+        "num_segments": 5
+    }
+];

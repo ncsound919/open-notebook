@@ -34,3 +34,39 @@ services:
       - surrealdb
     restart: always
     pull_policy: always
+
+  # ---- OSS voice lane (optional profiles; default compose is unchanged) ----
+  # Preset voices, CPU-only, no cloning:
+  #   docker compose --profile oss-voices up tts-kokoro
+  # Your-voice cloning, needs NVIDIA GPU:
+  #   docker compose --profile oss-voices --profile oss-clone up
+  tts-kokoro:
+    image: remsky/kokoro-fastapi-cpu:latest
+    profiles: ["oss-voices"]
+    ports:
+      - "8001:8000"
+    environment:
+      - USE_GPU=false
+    volumes:
+      - ./tts_data/kokoro:/app/api/src/voices
+    restart: unless-stopped
+
+  tts-f5:
+    image: ghcr.io/openttsgroup/f5-tts-open-tts:latest
+    profiles: ["oss-voices", "oss-clone"]
+    ports:
+      - "8002:8000"
+    environment:
+      - VOICES_DIR=/voices
+      - MAX_CONCURRENCY=1
+    volumes:
+      - ./tts_data/f5-voices:/voices
+      - ./tts_data/f5-cache:/root/.cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
