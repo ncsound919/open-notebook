@@ -1,0 +1,100 @@
+-- Migration 14: human-voice speaker profiles + oncology research profiles.
+-- Speakers use natural, conversational backstories so the transcript
+-- generator (prompts/podcast/transcript.jinja, HUMAN VOICE DIRECTION)
+-- produces speakable dialogue. ElevenLabs voices read warmer than the
+-- stock OpenAI set, so the oncology pair defaults to elevenlabs.
+
+insert into speaker_profile
+[
+    {
+        name: "oncology_lab",
+        description: "Two oncology researchers with a natural debate rhythm for experiment logs and discourse debates",
+        tts_provider: "elevenlabs",
+        tts_model: "eleven_multilingual_v2",
+        speakers: [
+            {
+                name: "Dr. Maya Okafor",
+                voice_id: "EXAVITQu4vr4xnSDxMaL",
+                backstory: "Translational oncologist who runs a tumor-board journal club. Thinks out loud, interrupts herself to correct numbers, laughs when a result surprises her.",
+                personality: "Warm, fast-talking, precise under pressure. Says 'okay, wait' when recalibrating. Never lectures; reasons alongside the listener."
+            },
+            {
+                name: "Dr. Daniel Reyes",
+                voice_id: "TXGEqnHWrfWFTfGW9XjX",
+                backstory: "Biostatistician embedded in a cancer center. Skeptical of every surrogate endpoint until shown calibration against overall survival.",
+                personality: "Dry humor, slow deliberate cadence, pushes back with 'show me the' questions. Concedes cleanly when the data wins."
+            }
+        ]
+    },
+    {
+        name: "oncology_solo",
+        description: "Single principal-investigator narrator for paper-generation episodes",
+        tts_provider: "elevenlabs",
+        tts_model: "eleven_multilingual_v2",
+        speakers: [
+            {
+                name: "Dr. Priya Nair",
+                voice_id: "MF3mGyEYCl7XYWbNvcZJ",
+                backstory: "PI who records spoken companions to her papers so clinicians can listen on rounds. Reads figures as stories, never recites tables.",
+                personality: "Calm, measured, quietly enthusiastic about mechanisms. Pauses for emphasis. Formal register, human rhythm."
+            }
+        ]
+    },
+    {
+        name: "human_duo",
+        description: "General-purpose natural conversation pair for any notebook content",
+        tts_provider: "openai",
+        tts_model: "gpt-4o-mini-tts",
+        speakers: [
+            {
+                name: "Sam",
+                voice_id: "echo",
+                backstory: "Curious generalist host who asks the question the listener is thinking.",
+                personality: "Conversational, quick reactions, short backchannels, calls the co-host by first name."
+            },
+            {
+                name: "June",
+                voice_id: "shimmer",
+                backstory: "Domain expert guest who explains without lecturing and admits uncertainty out loud.",
+                personality: "Thoughtful, uses concrete examples, says 'honestly' and 'here is the thing' when cutting to the point."
+            }
+        ]
+    }
+];
+
+insert into episode_profile
+[
+    {
+        name: "oncology_experiment_log",
+        description: "Structured lab-log narration for oncology experiments",
+        speaker_config: "oncology_lab",
+        outline_provider: "openai",
+        outline_model: "gpt-5-mini",
+        transcript_provider: "openai",
+        transcript_model: "gpt-5-mini",
+        default_briefing: "Document this experiment as a structured lab log. Keep hypothesis, methods, and results strictly separated (see prompts/oncology/experiment_log.jinja). Flag any claim not backed by a listed artifact as UNVERIFIED. End with a one-paragraph reproducibility note.",
+        "num_segments": 4
+    },
+    {
+        name: "oncology_paper",
+        description: "Spoken companion for generated science papers (Abstract/Methods/Results/Discussion)",
+        speaker_config: "oncology_solo",
+        outline_provider: "openai",
+        outline_model: "gpt-5-mini",
+        transcript_provider: "openai",
+        transcript_model: "gpt-5-mini",
+        default_briefing: "Narrate this study as a science paper in legit format: Abstract, Introduction, Methods, Results, Discussion, Conclusion (see prompts/oncology/paper_draft.jinja). Every claim must trace to the methods or results; mark gaps as LIMITATIONS. Narrate figures instead of reciting numbers.",
+        "num_segments": 6
+    },
+    {
+        name: "oncology_debate",
+        description: "Discourse Tool debate sessions voiced as podcast debates",
+        speaker_config: "oncology_lab",
+        outline_provider: "openai",
+        outline_model: "gpt-5-mini",
+        transcript_provider: "openai",
+        transcript_model: "gpt-5-mini",
+        default_briefing: "Voice this Discourse Tool session as a debate (see prompts/oncology/debate_briefing.jinja, or render via scripts/import_discourse_session.py). Claim, counterclaim grounded ONLY in shared claim cards, one concession per side, referee verdict: established / contested / experiment that settles it.",
+        "num_segments": 5
+    }
+];

@@ -1,0 +1,3 @@
+-- Rollback for migration 14: remove seeded profiles only, keep tables.
+DELETE FROM speaker_profile WHERE name IN ["oncology_lab", "oncology_solo", "human_duo"];
+DELETE FROM episode_profile WHERE name IN ["oncology_experiment_log", "oncology_paper", "oncology_debate"];

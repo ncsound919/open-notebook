@@ -28,6 +28,18 @@ The podcast features the following speakers:
 {% endfor %}
 </speakers>
 
+HUMAN VOICE DIRECTION (applies to every speaker, every segment):
+- Write how real people talk, not how essays read. Use contractions
+  (don't, can't, it's), sentence fragments, and mid-thought restarts
+  ("So the — okay, the key number here is...").
+- Vary rhythm: short punches mixed with longer runs. Never stack three
+  long balanced sentences in a row.
+- React out loud: surprise, doubt, agreement ("Huh.", "Wait, really?",
+  "Exactly — that's the part that convinced me.").
+- Ground abstractions in one concrete image or number per segment.
+- No bullet-list speech, no "Firstly... Secondly...", no lecture signposts.
+- Each line must be speakable in one breath by a voice actor.
+
 Next, examine the outline produced by our director:
 <outline>
 {{ outline }}
@@ -109,9 +121,12 @@ Guidelines for creating the transcript:
    - Include relevant details from the briefing.
    - Avoid long monologues; keep exchanges between speakers balanced.
    - Use appropriate transitions between topics.
-   - Match each speaker's dialogue to their personality and expertise.
-   - Choose speakers strategically based on who would naturally contribute to each topic.
-   - This is a whole podcast so no need to reintroduce speakers or topics on each segment. Segments are just markers for us to know to change the topics, nothing else.
+    - Match each speaker's dialogue to their personality and expertise.
+    - Choose speakers strategically based on who would naturally contribute to each topic.
+    - Keep it human between turns: backchannels ("mm-hm", "right"), brief
+      interruptions, and direct address by first name. Let speakers cut in
+      when genuinely surprised — then yield and continue.
+    - This is a whole podcast so no need to reintroduce speakers or topics on each segment. Segments are just markers for us to know to change the topics, nothing else.
    - IMPORTANT: Only use the provided speaker names: {{ speaker_names|join(', ') }}
 {% endif %}
 
