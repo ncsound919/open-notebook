@@ -94,6 +94,12 @@ def parse_thinking_content(content: str) -> Tuple[str, str]:
         cleaned_content = content[malformed_match.end() :].strip()
         return thinking_content, cleaned_content
 
+    # Handle truncated output: <think>content (no closing tag). The model ran
+    # out of output budget while still reasoning, so nothing is a real answer.
+    stripped = content.lstrip()
+    if stripped.startswith("<think>"):
+        return stripped[len("<think>") :].strip(), ""
+
     return "", content
 
 
@@ -117,3 +123,31 @@ def clean_thinking_content(content: str) -> str:
     """
     _, cleaned_content = parse_thinking_content(content)
     return cleaned_content
+
+
+def extract_text_content(content) -> str:
+    """Extract text from LLM response content.
+
+    Handles both plain string responses and structured content formats
+    (e.g. Gemini's envelope format):
+    [{'type': 'text', 'text': '...', 'extras': {...}}]
+
+    Args:
+        content: The content from an AI message, either a string or a list of parts.
+
+    Returns:
+        The extracted text content as a string.
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        text_parts = []
+        for part in content:
+            if isinstance(part, dict) and "text" in part:
+                text_parts.append(part["text"])
+            elif isinstance(part, str):
+                text_parts.append(part)
+        return "".join(text_parts)
+    return str(content)

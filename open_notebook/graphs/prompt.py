@@ -7,7 +7,7 @@ from langgraph.graph import END, START, StateGraph
 from typing_extensions import TypedDict
 
 from open_notebook.ai.provision import provision_langchain_model
-from open_notebook.utils.text_utils import clean_thinking_content
+from open_notebook.utils.text_utils import clean_thinking_content, extract_text_content
 
 
 class PatternChainState(TypedDict):
@@ -19,8 +19,12 @@ class PatternChainState(TypedDict):
 
 async def call_model(state: dict, config: RunnableConfig) -> dict:
     content = state["input_text"]
+    # state["prompt"] is caller-supplied free text. Never compile it as Jinja
+    # template *source* (Prompter(template_text=...)) - pass it as a plain
+    # render variable into a fixed, developer-authored template instead.
+    # See docs/7-DEVELOPMENT/security.md (GHSA-f35w-wx37-26q7).
     system_prompt = Prompter(
-        template_text=state["prompt"], parser=state.get("parser")
+        prompt_template="pattern/generic", parser=state.get("parser")
     ).render(data=state)
     payload = [SystemMessage(content=system_prompt)] + [HumanMessage(content=content)]
     chain = await provision_langchain_model(
@@ -33,7 +37,7 @@ async def call_model(state: dict, config: RunnableConfig) -> dict:
     response = await chain.ainvoke(payload)
 
     # Clean thinking tags from response (handles extended thinking models)
-    output = clean_thinking_content(str(response.content))
+    output = clean_thinking_content(extract_text_content(response.content))
     return {"output": output}
 
 
