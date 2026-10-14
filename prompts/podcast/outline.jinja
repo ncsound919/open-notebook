@@ -42,6 +42,7 @@ Please create an outline based on this briefing. Your outline should consist of 
 8. Include an introduction segment at the beginning and a conclusion or wrap-up segment at the end.
 
 Return exactly one JSON object with a single root key "segments" whose value is a list of exactly {{ num_segments }} entries. Each entry has exactly three keys: "name" and "description" (strings) and "size".
+YOUR RESPONSE MUST BE THE JSON OBJECT ONLY. Start the response with the character "{" and end it with "}". No preamble, no introduction, no explanation before or after the JSON — anything other than the raw JSON object fails the parser.
 {% if not language or language|lower == 'english' %}
 The line below is a two-entry EXCERPT showing that structure with sample values - keep the structure, write your own segments from the briefing, and return all {{ num_segments }} of them rather than the two shown:
 

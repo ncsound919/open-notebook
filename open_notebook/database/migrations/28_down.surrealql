@@ -1,0 +1,3 @@
+-- Rollback for migration 28: remove the plain-language explainer lane only.
+DELETE FROM speaker_profile WHERE name = "onc_explain_pair";
+DELETE FROM episode_profile WHERE name = "oncology_explain";

@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Plain-language episode lane (migration 28).** New `oncology_explain` episode profile with an `onc_explain_pair` speaker cast (curious host + translating researcher) for INFORMATIONAL episodes — complex research findings explained to a smart non-specialist, every technical term unpacked at first use, every number translated into meaning, unknowns stated as unknown. This is the fallback lane when no debate material exists (e.g. the Discourse Tool's model backend is unavailable); the debate lane (`oncology_debate`) is untouched. The briefing contract lives in `prompts/oncology/explain_briefing.jinja`; `voice_model`/`outline_llm`/`transcript_llm` resolve from the model registry so the migration is deployment-agnostic
+
 ### Changed
+- **Podcast templates demand bare JSON.** Both `prompts/podcast/outline.jinja` and `prompts/podcast/transcript.jinja` now state that the response must start with `{` and end with `}` with no preamble or explanation — some OpenAI-compatible endpoints narrate before the JSON and the plain-JSON fallback parser then fails the whole episode. Extended-thinking output still goes inside `<think>` tags
 - **Documentation rewritten against the code.** Every page under `docs/` was checked against v1.15.0 and rewritten where it described an older or imagined product (#1458, #1459, #1460, #1461):
   - **Install:** one canonical path built on the shipped `docker-compose.yml`, with small override files for the Ollama and LM Studio variants. The network-exposure warning (bind ports to `127.0.0.1` or set a password) comes before the first `docker compose up -d`. Example encryption keys are generated, never copied. First-run setup lives in one place, [Connect a provider](docs/4-AI-PROVIDERS/index.md#connect-a-provider), and ends in a working chat via **Auto-assign Defaults**. The provider table is built from the provider registry: 24 providers, with the model types each one offers
   - **User guide and concepts:** insights are a first-class concept and the context mode is *Insights only*. Ask is described as three stages. UI labels match the current app. Invented features are gone (tags, export/share, batch transformations, page-number citations and others). About 6,200 lines became about 1,450

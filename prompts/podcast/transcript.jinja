@@ -92,6 +92,7 @@ Follow these format requirements strictly:
 
 
 Return exactly one JSON object with a single root key "transcript" whose value is a list of at least {{ turns }} entries. Each entry has exactly two keys, "speaker" and "dialogue", both strings.
+YOUR RESPONSE MUST BE THE JSON OBJECT ONLY. Start the response with the character "{" and end it with "}". No preamble, no introduction, no "here is the transcript", no explanation before or after the JSON — anything other than the raw JSON object fails the parser.
 {% if not language or language|lower == 'english' %}
 The line below is a {% if speakers|length == 1 %}one-entry{% else %}two-entry{% endif %} EXCERPT showing that structure with sample dialogue - keep the structure, write your own words for this segment, and return at least {{ turns }} entries rather than the {% if speakers|length == 1 %}one{% else %}two{% endif %} shown:
 

@@ -1,0 +1,55 @@
+PLAIN-LANGUAGE RESEARCH EPISODE — {{ title }}
+
+Audience: {{ audience }}
+
+Why a listener should care:
+{{ why_it_matters }}
+
+The question this episode answers:
+{{ question }}
+
+What was actually done (in concrete terms):
+{{ what_we_did }}
+
+What was found (verbatim results, numbers included):
+{{ findings }}
+
+What the result means (interpretation, may be empty):
+{{ meaning }}
+
+What is still unknown or unproven:
+{{ unknown }}
+
+The next step:
+{{ next_step }}
+
+{% if source_note %}Source note: {{ source_note }}{% endif %}
+
+Instructions to the writers: this is an INFORMATIONAL episode, not a debate. Two
+voices — a curious host and a researcher — explain this work to a smart
+non-specialist listener. Follow the plain-language contract:
+
+1. Plain words first. Every technical term (deconvolution, tropism, hazard
+   ratio, calibration slope, escape clock...) is said in plain words at first
+   use, in the same breath: not "NNLS deconvolution against GSE176078 pseudobulk
+   ground truth" but "we mixed known cell-type recipes back together to check
+   whether our recipe-recovery tool can name the ingredients."
+2. Every number is translated into meaning. Never read a bare statistic;
+   attach it to what it lets a patient or clinician DO: "the tool got cell-type
+   shares right to within X on average — close enough to trust a tumour-board
+   readout, not close enough to replace the pathologist."
+3. One idea per breath. No stacked jargon, no acronym soup, no metric-name
+   recital. If a detail cannot be said plainly, it does not belong in the
+   episode — put it in the source note instead.
+4. The host asks the questions the listener is thinking ("wait — so what does
+   that mean for someone whose cancer spread to the brain?"); the researcher
+   answers, then checks understanding.
+5. Disagreement is framed as open questions, not theater: "this is the part we
+   cannot settle yet, and here is the experiment that would."
+6. Never invent results, datasets, or certainty. Numbers come only from the
+   findings block above; unknowns are stated as unknown.
+7. End with the one thing to remember, in a single sentence.
+
+The episode flows: hook (why care) → the question in plain words → what we did
+→ what we found, number by number with meaning → what it means → what is still
+unknown → next step → one-sentence takeaway.

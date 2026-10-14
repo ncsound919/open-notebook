@@ -1,0 +1,49 @@
+-- Migration 28: plain-language informational episode lane.
+-- The debate lane (oncology_debate) voices Discourse Tool sessions. When the
+-- Discourse Tool's model backend is unavailable, the oncology pipeline must
+-- fall back to an INFORMATIONAL episode: complex findings explained in plain
+-- language, not a debate with nothing to debate. This seeds that lane.
+-- voice_model/outline_llm/transcript_llm are resolved from the model registry
+-- so the migration stays deployment-agnostic; a fresh deploy without models
+-- registered yet leaves them null (configure in the UI afterwards).
+
+LET $tts = (SELECT VALUE id FROM model WHERE type = "text_to_speech" LIMIT 1)[0];
+LET $llm = (SELECT VALUE id FROM model WHERE type = "language" LIMIT 1)[0];
+
+INSERT INTO speaker_profile
+[
+    {
+        name: "onc_explain_pair",
+        description: "Plain-language explainer pair: a curious host and a researcher who translates",
+        voice_model: $tts,
+        speakers: [
+            {
+                name: "Maya",
+                voice_id: "af_heart",
+                backstory: "Curious host who asks the question the listener is thinking and refuses to let jargon pass unexplained.",
+                personality: "Warm, quick, says 'wait, say that plainly' when a term needs unpacking."
+            },
+            {
+                name: "Daniel",
+                voice_id: "am_adam",
+                backstory: "Researcher who explains his own work to a smart non-specialist. Reads numbers as meaning, never as a table.",
+                personality: "Calm, concrete, admits uncertainty out loud."
+            }
+        ]
+    }
+];
+
+INSERT INTO episode_profile
+[
+    {
+        name: "oncology_explain",
+        description: "Plain-language informational episode for research findings (debate fallback when Discourse Tool is unavailable)",
+        speaker_config: "onc_explain_pair",
+        outline_llm: $llm,
+        transcript_llm: $llm,
+        language: "en",
+        default_briefing: "Informational episode, not a debate: explain this research to a smart non-specialist. Every technical term is said in plain words at first use; every number is translated into what it lets a patient or clinician do; unknowns are stated as unknown. See prompts/oncology/explain_briefing.jinja for the full contract.",
+        num_segments: 5,
+        max_tokens: 4096
+    }
+];
