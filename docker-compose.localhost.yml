@@ -1,0 +1,17 @@
+# Viewer wiring: bind to localhost only, and pass the real secrets from .env
+# (the upstream compose hardcodes OPEN_NOTEBOOK_ENCRYPTION_KEY and does not
+#  pass OPEN_NOTEBOOK_PASSWORD, so both are supplied here from .env).
+services:
+  surrealdb:
+    ports: !override
+      - "127.0.0.1:8000:8000"
+  open_notebook:
+    environment:
+      OPEN_NOTEBOOK_ENCRYPTION_KEY: ${OPEN_NOTEBOOK_ENCRYPTION_KEY}
+      SURREAL_USER: ${SURREAL_USER:-root}
+      SURREAL_PASSWORD: ${SURREAL_PASSWORD:-root}
+      # Uncomment to require a password (breaks the localhost automation lane):
+      # OPEN_NOTEBOOK_PASSWORD: ${OPEN_NOTEBOOK_PASSWORD}
+    ports: !override
+      - "127.0.0.1:8502:8502"
+      - "127.0.0.1:5055:5055"
